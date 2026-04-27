@@ -6,8 +6,6 @@ import {
   UserCircle, 
   Mail, 
   Video, 
-  Image as ImageIcon,
-  Upload,
   CheckCircle2,
   Loader2,
   AlertTriangle,
@@ -41,7 +39,7 @@ export const QRInput: React.FC<QRInputProps> = ({ config, onChange, onTypeChange
   // Advanced Cloud Config
   const [showConfig, setShowConfig] = useState(false);
   const [cloudConfig, setCloudConfig] = useState({
-    cloudName: localStorage.getItem('qr_cloud_name') || 'demo',
+    cloudName: localStorage.getItem('qr_cloud_name') || 'dxp7p7p7p',
     uploadPreset: localStorage.getItem('qr_upload_preset') || 'ml_default'
   });
 
@@ -94,11 +92,7 @@ export const QRInput: React.FC<QRInputProps> = ({ config, onChange, onTypeChange
       }
     } catch (error) {
       console.error('Upload error:', error);
-      setUploadError('Cloud upload failed. Using Local Simulation mode.');
-      
-      const localUrl = URL.createObjectURL(file);
-      setUploadedUrl(localUrl);
-      onChange(localUrl);
+      setUploadError('Cloud upload failed. Please try again later or use your own Cloudinary credentials.');
     } finally {
       setUploading(false);
     }
@@ -192,7 +186,7 @@ export const QRInput: React.FC<QRInputProps> = ({ config, onChange, onTypeChange
                   </div>
                 </div>
                 <p className="text-[10px] text-slate-500 italic">
-                  Pro Tip: Create a free Cloudinary account to get your own credentials and bypass demo rate limits.
+                  Pro Tip: Create a free Cloudinary account to bypass rate limits.
                 </p>
               </div>
             )}
@@ -236,7 +230,7 @@ export const QRInput: React.FC<QRInputProps> = ({ config, onChange, onTypeChange
                 <div className="space-y-4 px-4">
                   <AlertTriangle size={40} className="text-amber-500 mx-auto" />
                   <p className="text-xs font-bold text-amber-700 leading-tight">{uploadError}</p>
-                  <p className="text-[10px] text-slate-400">Scan this QR now to test on this device.</p>
+                  <p className="text-[10px] text-slate-400">Please try again or check your cloud settings.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -256,16 +250,15 @@ export const QRInput: React.FC<QRInputProps> = ({ config, onChange, onTypeChange
                 <Cloud size={20} className="text-indigo-500" />
               </div>
               <div className="space-y-2">
-                <p className="text-sm font-black text-indigo-900 dark:text-indigo-300">Production Ready Hosting</p>
+                <p className="text-sm font-black text-indigo-900 dark:text-indigo-300">Cloud Media Studio</p>
                 <p className="text-xs text-indigo-700 dark:text-indigo-400 leading-relaxed font-medium">
-                  We use <strong className="text-indigo-900 dark:text-indigo-200">Cloudinary</strong> for professional hosting. By default, it uses a public demo cloud, but you can add your own for unlimited uploads.
+                  We use professional hosting to ensure your high-quality videos and images are optimized and always scannable.
                 </p>
               </div>
             </div>
           </div>
         )}
 
-        {/* Other types remain unchanged */}
         {config.dataType === 'text' && (
           <div className="space-y-1">
             <label className={labelClass}>Plain Text</label>
