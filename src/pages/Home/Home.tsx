@@ -28,8 +28,8 @@ export const Home: React.FC = () => {
 
       <div className="max-w-6xl mx-auto">
         <header className="mb-16 text-center animate-in fade-in slide-in-from-top duration-1000">
-          <div className="inline-flex items-center justify-center p-4 bg-white dark:bg-slate-800 shadow-2xl rounded-3xl mb-8 ring-1 ring-slate-100 dark:ring-slate-700 animate-float">
-            <QrCode size={48} className="text-indigo-600 dark:text-indigo-400" />
+          <div className="inline-flex items-center justify-center p-1 bg-white dark:bg-slate-800 shadow-2xl rounded-3xl mb-8 ring-1 ring-slate-100 dark:ring-slate-700 animate-float overflow-hidden">
+            <img src="/logo.png" alt="QR Architect Logo" className="w-16 h-16 object-cover rounded-2xl" />
           </div>
           <h1 className="text-6xl font-black tracking-tight mb-6">
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-purple-600 to-teal-500 dark:from-indigo-400 dark:via-purple-400 dark:to-teal-400 animate-gradient-x">

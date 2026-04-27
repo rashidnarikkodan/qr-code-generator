@@ -7,8 +7,6 @@ import {
   Mail, 
   Video, 
   Image as ImageIcon,
-  Info,
-  Upload,
   CheckCircle2,
   Loader2,
   AlertTriangle,

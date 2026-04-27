@@ -13,6 +13,7 @@ export interface QRPreviewHandle {
 export const QRPreview = forwardRef<QRPreviewHandle, QRPreviewProps>(({ config }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const qrInstanceRef = useRef<ReturnType<typeof generateQR>>(null);
+  const lastTypeRef = useRef(config.type);
 
   useImperativeHandle(ref, () => ({
     download: (extension: 'png' | 'svg') => {
@@ -28,20 +29,34 @@ export const QRPreview = forwardRef<QRPreviewHandle, QRPreviewProps>(({ config }
   useEffect(() => {
     if (!containerRef.current) return;
 
-    if (!qrInstanceRef.current) {
+    const typeChanged = lastTypeRef.current !== config.type;
+
+    if (!qrInstanceRef.current || typeChanged) {
+      if (containerRef.current) containerRef.current.innerHTML = '';
       qrInstanceRef.current = generateQR(config);
       qrInstanceRef.current.append(containerRef.current);
+      lastTypeRef.current = config.type;
     } else {
       qrInstanceRef.current.update({
         data: config.data,
         width: config.width,
         height: config.height,
         margin: config.margin,
+        type: config.type,
         dotsOptions: {
           color: config.color,
+          type: config.dotsType,
         },
         backgroundOptions: {
           color: config.backgroundColor,
+        },
+        cornersSquareOptions: {
+          color: config.cornerSquareColor || config.color,
+          type: config.cornerSquareType,
+        },
+        cornersDotOptions: {
+          color: config.cornerDotColor || config.color,
+          type: config.cornerDotType,
         },
         image: config.logo,
         qrOptions: {
@@ -52,8 +67,11 @@ export const QRPreview = forwardRef<QRPreviewHandle, QRPreviewProps>(({ config }
   }, [config]);
 
   return (
-    <div className="flex justify-center items-center bg-gray-50 rounded-xl p-8 border border-dashed border-gray-300 min-h-[350px]">
-      <div ref={containerRef} className="shadow-lg bg-white p-2 rounded-lg" />
+    <div className="flex justify-center items-center w-full min-h-[300px] animate-float">
+      <div 
+        ref={containerRef} 
+        className="shadow-2xl bg-white p-4 rounded-[2rem] ring-1 ring-slate-100 dark:ring-slate-700" 
+      />
     </div>
   );
 });
