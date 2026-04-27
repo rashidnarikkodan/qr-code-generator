@@ -7,10 +7,12 @@ import {
   Mail, 
   Video, 
   Image as ImageIcon,
+  Upload,
   CheckCircle2,
   Loader2,
   AlertTriangle,
-  Cloud
+  Cloud,
+  Settings
 } from 'lucide-react';
 import type { QRConfig } from '../types';
 
@@ -36,6 +38,18 @@ export const QRInput: React.FC<QRInputProps> = ({ config, onChange, onTypeChange
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
+  // Advanced Cloud Config
+  const [showConfig, setShowConfig] = useState(false);
+  const [cloudConfig, setCloudConfig] = useState({
+    cloudName: localStorage.getItem('qr_cloud_name') || 'demo',
+    uploadPreset: localStorage.getItem('qr_upload_preset') || 'ml_default'
+  });
+
+  useEffect(() => {
+    localStorage.setItem('qr_cloud_name', cloudConfig.cloudName);
+    localStorage.setItem('qr_upload_preset', cloudConfig.uploadPreset);
+  }, [cloudConfig]);
+
   useEffect(() => {
     if (config.dataType === 'wifi') {
       const wifiString = `WIFI:S:${wifiSsid};T:${wifiType};P:${wifiPassword};;`;
@@ -56,29 +70,25 @@ export const QRInput: React.FC<QRInputProps> = ({ config, onChange, onTypeChange
     setUploadError(null);
     
     try {
-      // Use Cloudinary's unsigned upload (Industry Standard)
-      // This is much more reliable for browser-based uploads than anonymous hosts
-      const cloudName = 'demo'; // Public demo cloud
-      const uploadPreset = 'ml_default'; // Public unsigned preset
-      
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('upload_preset', uploadPreset);
+      formData.append('upload_preset', cloudConfig.uploadPreset);
 
-      const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, {
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudConfig.cloudName}/auto/upload`, {
         method: 'POST',
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error('Upload failed. The demo cloud may be rate-limited.');
+        throw new Error('Upload failed. The current cloud configuration might be rate-limited.');
       }
 
       const data = await response.json();
       
       if (data.secure_url) {
-        setUploadedUrl(data.secure_url);
-        onChange(data.secure_url);
+        const viewerLink = `${window.location.origin}/view?media=${encodeURIComponent(data.secure_url)}`;
+        setUploadedUrl(viewerLink);
+        onChange(viewerLink);
       } else {
         throw new Error('No URL returned from cloud');
       }
@@ -86,7 +96,6 @@ export const QRInput: React.FC<QRInputProps> = ({ config, onChange, onTypeChange
       console.error('Upload error:', error);
       setUploadError('Cloud upload failed. Using Local Simulation mode.');
       
-      // Fallback: Use a local object URL (only works on this device)
       const localUrl = URL.createObjectURL(file);
       setUploadedUrl(localUrl);
       onChange(localUrl);
@@ -147,7 +156,47 @@ export const QRInput: React.FC<QRInputProps> = ({ config, onChange, onTypeChange
 
         {config.dataType === 'media' && (
           <div className="space-y-5">
-            <label className={labelClass}>Cloud Studio Upload</label>
+            <div className="flex items-center justify-between mb-2">
+              <label className={labelClass}>Cloud Studio Upload</label>
+              <button 
+                onClick={() => setShowConfig(!showConfig)}
+                className="text-[10px] font-black text-indigo-500 uppercase tracking-widest flex items-center gap-1 hover:text-indigo-600 transition-colors"
+              >
+                <Settings size={12} />
+                {showConfig ? 'Hide Config' : 'Custom Cloud'}
+              </button>
+            </div>
+
+            {showConfig && (
+              <div className="p-5 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-2xl border border-indigo-100/50 dark:border-indigo-900/20 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300 mb-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <span className="text-[10px] text-slate-400 font-bold ml-1 uppercase">Cloud Name</span>
+                    <input 
+                      type="text" 
+                      value={cloudConfig.cloudName}
+                      onChange={(e) => setCloudConfig({...cloudConfig, cloudName: e.target.value})}
+                      placeholder="demo"
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[10px] text-slate-400 font-bold ml-1 uppercase">Preset</span>
+                    <input 
+                      type="text" 
+                      value={cloudConfig.uploadPreset}
+                      onChange={(e) => setCloudConfig({...cloudConfig, uploadPreset: e.target.value})}
+                      placeholder="ml_default"
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
+                    />
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-500 italic">
+                  Pro Tip: Create a free Cloudinary account to get your own credentials and bypass demo rate limits.
+                </p>
+              </div>
+            )}
+
             <div 
               className={`relative border-2 border-dashed rounded-3xl p-8 transition-all flex flex-col items-center justify-center text-center cursor-pointer overflow-hidden ${
                 uploading 
@@ -173,7 +222,7 @@ export const QRInput: React.FC<QRInputProps> = ({ config, onChange, onTypeChange
               {uploading ? (
                 <div className="space-y-4">
                   <Loader2 size={40} className="text-indigo-500 animate-spin mx-auto" />
-                  <p className="text-sm font-bold text-slate-600 dark:text-slate-300">Uploading to Cloudinary...</p>
+                  <p className="text-sm font-bold text-slate-600 dark:text-slate-300">Uploading to {cloudConfig.cloudName}...</p>
                 </div>
               ) : uploadedUrl ? (
                 <div className="space-y-4 animate-in zoom-in duration-500">
@@ -196,7 +245,7 @@ export const QRInput: React.FC<QRInputProps> = ({ config, onChange, onTypeChange
                   </div>
                   <div className="space-y-1">
                     <p className="text-sm font-bold text-slate-600 dark:text-slate-300">Click to Cloud Upload</p>
-                    <p className="text-[10px] text-slate-400 font-medium">Industry Standard Hosting</p>
+                    <p className="text-[10px] text-slate-400 font-medium">Using {cloudConfig.cloudName} storage</p>
                   </div>
                 </div>
               )}
@@ -204,12 +253,12 @@ export const QRInput: React.FC<QRInputProps> = ({ config, onChange, onTypeChange
 
             <div className="p-5 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl border border-indigo-100 dark:border-indigo-900/30 flex gap-4 animate-in fade-in zoom-in duration-700">
               <div className="p-2 bg-white dark:bg-indigo-900/50 rounded-xl shadow-sm h-fit">
-                <ImageIcon size={20} className="text-indigo-500" />
+                <Cloud size={20} className="text-indigo-500" />
               </div>
               <div className="space-y-2">
-                <p className="text-sm font-black text-indigo-900 dark:text-indigo-300">Cloudinary Integration</p>
+                <p className="text-sm font-black text-indigo-900 dark:text-indigo-300">Production Ready Hosting</p>
                 <p className="text-xs text-indigo-700 dark:text-indigo-400 leading-relaxed font-medium">
-                  We are now using <strong className="text-indigo-900 dark:text-indigo-200">Cloudinary</strong> for professional media hosting. This ensures your high-quality videos and images are optimized and always scannable.
+                  We use <strong className="text-indigo-900 dark:text-indigo-200">Cloudinary</strong> for professional hosting. By default, it uses a public demo cloud, but you can add your own for unlimited uploads.
                 </p>
               </div>
             </div>

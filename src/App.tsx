@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Home } from './pages/Home/Home';
+import { MediaViewer } from './pages/MediaViewer/MediaViewer';
 import { ThemeToggle } from './components/ui/ThemeToggle';
 
 function App() {
@@ -20,12 +22,18 @@ function App() {
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
 
   return (
-    <div className="min-h-screen transition-colors duration-500 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans selection:bg-indigo-100 dark:selection:bg-indigo-900">
-      <div className="fixed top-8 right-8 z-50">
-        <ThemeToggle theme={theme} toggle={toggleTheme} />
+    <BrowserRouter>
+      <div className="min-h-screen transition-colors duration-500 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans selection:bg-indigo-100 dark:selection:bg-indigo-900 relative">
+        <div className="fixed top-8 right-8 z-50">
+          <ThemeToggle theme={theme} toggle={toggleTheme} />
+        </div>
+        
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/view" element={<MediaViewer />} />
+        </Routes>
       </div>
-      <Home />
-    </div>
+    </BrowserRouter>
   );
 }
 
