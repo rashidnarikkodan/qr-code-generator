@@ -5,12 +5,11 @@ import {
   Wifi, 
   UserCircle, 
   Mail, 
-  Video, 
-  CheckCircle2,
-  Loader2,
-  AlertTriangle,
-  Cloud,
-  Settings
+  Camera,
+  Send,
+  Code,
+  Play,
+  Share2
 } from 'lucide-react';
 import type { QRConfig } from '../types';
 
@@ -32,21 +31,8 @@ export const QRInput: React.FC<QRInputProps> = ({ config, onChange, onTypeChange
     org: ''
   });
 
-  const [uploading, setUploading] = useState(false);
-  const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-
-  // Advanced Cloud Config
-  const [showConfig, setShowConfig] = useState(false);
-  const [cloudConfig, setCloudConfig] = useState({
-    cloudName: localStorage.getItem('qr_cloud_name') || 'dxp7p7p7p',
-    uploadPreset: localStorage.getItem('qr_upload_preset') || 'ml_default'
-  });
-
-  useEffect(() => {
-    localStorage.setItem('qr_cloud_name', cloudConfig.cloudName);
-    localStorage.setItem('qr_upload_preset', cloudConfig.uploadPreset);
-  }, [cloudConfig]);
+  const [socialHandle, setSocialHandle] = useState('');
+  const [socialPlatform, setSocialPlatform] = useState<'instagram' | 'twitter' | 'github' | 'youtube'>('instagram');
 
   useEffect(() => {
     if (config.dataType === 'wifi') {
@@ -62,49 +48,25 @@ export const QRInput: React.FC<QRInputProps> = ({ config, onChange, onTypeChange
     }
   }, [vCard, config.dataType]);
 
-  const handleMediaUpload = async (file: File) => {
-    setUploading(true);
-    setUploadedUrl(null);
-    setUploadError(null);
-    
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('upload_preset', cloudConfig.uploadPreset);
-
-      const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudConfig.cloudName}/auto/upload`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Upload failed. The current cloud configuration might be rate-limited.');
-      }
-
-      const data = await response.json();
-      
-      if (data.secure_url) {
-        const viewerLink = `${window.location.origin}/view?media=${encodeURIComponent(data.secure_url)}`;
-        setUploadedUrl(viewerLink);
-        onChange(viewerLink);
-      } else {
-        throw new Error('No URL returned from cloud');
-      }
-    } catch (error) {
-      console.error('Upload error:', error);
-      setUploadError('Cloud upload failed. Please try again later or use your own Cloudinary credentials.');
-    } finally {
-      setUploading(false);
+  useEffect(() => {
+    if (config.dataType === 'social') {
+      const urls = {
+        instagram: `https://instagram.com/${socialHandle}`,
+        twitter: `https://twitter.com/${socialHandle}`,
+        github: `https://github.com/${socialHandle}`,
+        youtube: `https://youtube.com/@${socialHandle}`,
+      };
+      onChange(urls[socialPlatform]);
     }
-  };
+  }, [socialHandle, socialPlatform, config.dataType]);
 
   const tabs = [
     { id: 'url', icon: Link, label: 'URL' },
-    { id: 'text', icon: AlignLeft, label: 'Text' },
+    { id: 'social', icon: Share2, label: 'Social' },
     { id: 'wifi', icon: Wifi, label: 'WiFi' },
     { id: 'vcard', icon: UserCircle, label: 'VCard' },
     { id: 'email', icon: Mail, label: 'Email' },
-    { id: 'media', icon: Video, label: 'Media' },
+    { id: 'text', icon: AlignLeft, label: 'Text' },
   ] as const;
 
   const inputClass = "w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-slate-100 placeholder:text-slate-400";
@@ -117,11 +79,7 @@ export const QRInput: React.FC<QRInputProps> = ({ config, onChange, onTypeChange
         {tabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => {
-              onTypeChange(tab.id as any);
-              setUploadedUrl(null);
-              setUploadError(null);
-            }}
+            onClick={() => onTypeChange(tab.id as any)}
             className={`flex flex-col items-center gap-2 py-3 rounded-xl transition-all duration-300 ${
               config.dataType === tab.id
                 ? 'bg-white dark:bg-slate-700 shadow-xl dark:shadow-none text-indigo-600 dark:text-indigo-400 scale-105 ring-1 ring-slate-100 dark:ring-slate-600'
@@ -148,127 +106,42 @@ export const QRInput: React.FC<QRInputProps> = ({ config, onChange, onTypeChange
           </div>
         )}
 
-        {config.dataType === 'media' && (
+        {config.dataType === 'social' && (
           <div className="space-y-5">
-            <div className="flex items-center justify-between mb-2">
-              <label className={labelClass}>Cloud Studio Upload</label>
-              <button 
-                onClick={() => setShowConfig(!showConfig)}
-                className="text-[10px] font-black text-indigo-500 uppercase tracking-widest flex items-center gap-1 hover:text-indigo-600 transition-colors"
-              >
-                <Settings size={12} />
-                {showConfig ? 'Hide Config' : 'Custom Cloud'}
-              </button>
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { id: 'instagram', icon: Camera, label: 'Instagram' },
+                { id: 'twitter', icon: Send, label: 'Twitter' },
+                { id: 'github', icon: Code, label: 'Github' },
+                { id: 'youtube', icon: Play, label: 'Youtube' },
+              ].map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => setSocialPlatform(p.id as any)}
+                  className={`p-3 rounded-xl border transition-all flex flex-col items-center justify-center gap-1 ${
+                    socialPlatform === p.id
+                      ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 hover:border-slate-300 dark:hover:border-slate-600'
+                  }`}
+                >
+                  <p.icon size={20} />
+                  <span className="text-[8px] font-black uppercase tracking-tighter">{p.label}</span>
+                </button>
+              ))}
             </div>
-
-            {showConfig && (
-              <div className="p-5 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-2xl border border-indigo-100/50 dark:border-indigo-900/20 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300 mb-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <span className="text-[10px] text-slate-400 font-bold ml-1 uppercase">Cloud Name</span>
-                    <input 
-                      type="text" 
-                      value={cloudConfig.cloudName}
-                      onChange={(e) => setCloudConfig({...cloudConfig, cloudName: e.target.value})}
-                      placeholder="demo"
-                      className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-[10px] text-slate-400 font-bold ml-1 uppercase">Preset</span>
-                    <input 
-                      type="text" 
-                      value={cloudConfig.uploadPreset}
-                      onChange={(e) => setCloudConfig({...cloudConfig, uploadPreset: e.target.value})}
-                      placeholder="ml_default"
-                      className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
-                    />
-                  </div>
-                </div>
-                <p className="text-[10px] text-slate-500 italic">
-                  Pro Tip: Create a free Cloudinary account to bypass rate limits.
-                </p>
-              </div>
-            )}
-
-            <div 
-              className={`relative border-2 border-dashed rounded-3xl p-8 transition-all flex flex-col items-center justify-center text-center cursor-pointer overflow-hidden ${
-                uploading 
-                  ? 'border-indigo-300 bg-indigo-50/10' 
-                  : uploadedUrl 
-                    ? 'border-teal-300 bg-teal-50/10' 
-                    : uploadError
-                      ? 'border-amber-300 bg-amber-50/10'
-                      : 'border-slate-200 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-600'
-              }`}
-            >
-              <input
-                type="file"
-                accept="image/*,video/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleMediaUpload(file);
-                }}
-                className="absolute inset-0 opacity-0 cursor-pointer"
-                disabled={uploading}
-              />
-              
-              {uploading ? (
-                <div className="space-y-4">
-                  <Loader2 size={40} className="text-indigo-500 animate-spin mx-auto" />
-                  <p className="text-sm font-bold text-slate-600 dark:text-slate-300">Uploading to {cloudConfig.cloudName}...</p>
-                </div>
-              ) : uploadedUrl ? (
-                <div className="space-y-4 animate-in zoom-in duration-500">
-                  <CheckCircle2 size={40} className="text-teal-500 mx-auto" />
-                  <div>
-                    <p className="text-sm font-black text-teal-700 dark:text-teal-400">Live & Hosted!</p>
-                    <p className="text-[10px] text-slate-400 font-mono mt-1 truncate max-w-[200px] mx-auto">{uploadedUrl}</p>
-                  </div>
-                </div>
-              ) : uploadError ? (
-                <div className="space-y-4 px-4">
-                  <AlertTriangle size={40} className="text-amber-500 mx-auto" />
-                  <p className="text-xs font-bold text-amber-700 leading-tight">{uploadError}</p>
-                  <p className="text-[10px] text-slate-400">Please try again or check your cloud settings.</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-full shadow-inner ring-1 ring-slate-100 dark:ring-slate-700">
-                    <Cloud size={32} className="text-indigo-500" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-bold text-slate-600 dark:text-slate-300">Click to Cloud Upload</p>
-                    <p className="text-[10px] text-slate-400 font-medium">Using {cloudConfig.cloudName} storage</p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="p-5 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl border border-indigo-100 dark:border-indigo-900/30 flex gap-4 animate-in fade-in zoom-in duration-700">
-              <div className="p-2 bg-white dark:bg-indigo-900/50 rounded-xl shadow-sm h-fit">
-                <Cloud size={20} className="text-indigo-500" />
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm font-black text-indigo-900 dark:text-indigo-300">Cloud Media Studio</p>
-                <p className="text-xs text-indigo-700 dark:text-indigo-400 leading-relaxed font-medium">
-                  We use professional hosting to ensure your high-quality videos and images are optimized and always scannable.
-                </p>
+            <div className="space-y-1">
+              <label className={labelClass}>{socialPlatform} Username</label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">@</span>
+                <input
+                  type="text"
+                  value={socialHandle}
+                  onChange={(e) => setSocialHandle(e.target.value)}
+                  placeholder="username"
+                  className={`${inputClass} pl-8`}
+                />
               </div>
             </div>
-          </div>
-        )}
-
-        {config.dataType === 'text' && (
-          <div className="space-y-1">
-            <label className={labelClass}>Plain Text</label>
-            <textarea
-              rows={5}
-              value={config.data}
-              onChange={(e) => onChange(e.target.value)}
-              placeholder="Enter your message here..."
-              className={inputClass}
-            />
           </div>
         )}
 
@@ -351,6 +224,19 @@ export const QRInput: React.FC<QRInputProps> = ({ config, onChange, onTypeChange
               type="email"
               placeholder="hello@example.com"
               onChange={(e) => onChange(`mailto:${e.target.value}`)}
+              className={inputClass}
+            />
+          </div>
+        )}
+
+        {config.dataType === 'text' && (
+          <div className="space-y-1">
+            <label className={labelClass}>Plain Text</label>
+            <textarea
+              rows={5}
+              value={config.data}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder="Enter your message here..."
               className={inputClass}
             />
           </div>
